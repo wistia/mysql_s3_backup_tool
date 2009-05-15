@@ -30,8 +30,10 @@ class MysqlTools
     
     puts "Exporting..."
     dump_result = "#{dump_path}.result"
+    mysql_database_clause = @config['mysql_database'] ? @config['mysql_database'] : '--all-databases'
+    mysql_user_clause = @config['mysql_user'] ? "-u#{@config['mysql_user']}" : "-uroot"
     mysql_password_clause = @config['mysql_password'] ? "-p#{@config['mysql_password']}" : ""
-    `mysqldump -v --quick --single-transaction --all-databases -u root #{mysql_password_clause} > #{dump_path} 2> #{dump_result}`
+    `mysqldump -v --quick --single-transaction #{mysql_user_clause} #{mysql_password_clause} #{mysql_database_clause} > #{dump_path} 2> #{dump_result}`
     puts "dump_result: #{File.read(dump_result)}" if DEBUG
     
     puts "Compressing..."
@@ -134,7 +136,8 @@ Location on S3: #{s3_path}
     
     begin
       Net::SMTP.start(@config["smtp_server"], 25) do |smtp|
-        smtp.send_message msgstr, 'root@localhost', @config["email"]
+        from = @config['email_from'] || 'root@localhost'
+        smtp.send_message(msgstr, @config['email_from'], @config["email"])
       end 
     rescue Exception => e
       puts "ERROR: 
