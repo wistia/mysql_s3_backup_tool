@@ -44,6 +44,9 @@ class MysqlTools
     file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-%d_%H-%M")}.sql.gz"
     S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
     
+    puts "Deleting tmp files..."
+    File.unlink(dump_path, dump_result, "#{dump_path}.gz")
+    
     success = S3Object.exists?(file_name, @config['bucket']) ? "success":"failure"
     mail('backup', success, file_name)
     puts "Done: #{success}"
