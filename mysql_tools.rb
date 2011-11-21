@@ -41,7 +41,7 @@ class MysqlTools
     puts "Compress result: #{compress_result}" if DEBUG
     
     puts "Storing..."
-    file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-%d_%H-%M")}.sql.gz"
+    file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-%w")}.sql.gz"
     S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
     
     puts "Deleting tmp files..."
