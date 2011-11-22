@@ -41,8 +41,14 @@ class MysqlTools
     puts "Compress result: #{compress_result}" if DEBUG
     
     puts "Storing..."
-    file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-%w")}.sql.gz"
+    file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%a")}.sql.gz"
     S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
+
+    # if it's the first of the month, store a long-term backup
+    if Time.now.day == 1
+      file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-long_term")}.sql.gz"
+      S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
+    end
     
     puts "Deleting tmp files..."
     File.unlink(dump_result, "#{dump_path}.gz")
