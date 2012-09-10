@@ -6,7 +6,6 @@ require 'aws'
 DEBUG = false
 
 class MysqlTools
-  include AWS::S3
   attr_accessor :config, :hostname
   
   def initialize(action, *args)
