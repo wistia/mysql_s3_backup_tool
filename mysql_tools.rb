@@ -1,7 +1,7 @@
 require "yaml"
 require 'net/smtp'
 require 'rubygems'
-require 'aws/s3'
+require 'aws'
 
 DEBUG = false
 
@@ -41,23 +41,25 @@ class MysqlTools
     puts "Compress result: #{compress_result}" if DEBUG
     
     puts "Storing..."
+    bucket = @s3.buckets[@config['bucket']]
+
     file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%a")}.sql.gz"
-    S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
+    bucket.objects['file_name'].write(open("#{dump_path}.gz"))
 
     # if it's the first of the month, store a long-term backup
     if Time.now.day == 1
       file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-long_term")}.sql.gz"
-      S3Object.store(file_name, open("#{dump_path}.gz"), @config['bucket'])
+      bucket.objects['file_name'].write(open("#{dump_path}.gz"))
     end
     
     puts "Deleting tmp files..."
     File.unlink(dump_result, "#{dump_path}.gz")
-    
-    success = S3Object.exists?(file_name, @config['bucket']) ? "success":"failure"
+
+    success = bucket.objects[file_name].exists? ? "success":"failure"
     mail('backup', success, file_name)
     puts "Done: #{success}"
   end
-  
+
   def restore(filename=nil)
     # get a list of available backups if no filename given
     filename = get_recent_backup if filename.nil?
@@ -65,12 +67,14 @@ class MysqlTools
     # filename might have folder prepended from get_recent_backup
     filename = File.basename(filename)
 
+    bucket = @s3.buckets[@config['bucket']]
+
     # retrieve the file data
     puts "retrieving [#{filename}] ..."
-    die "File [#{filename}] not found." if not S3Object.exists?("#{@config['folder']}/#{filename}", @config['bucket'])
-    
+    die "File [#{filename}] not found." if not bucket.objects["#{@config['folder']}/#{filename}"].exists?
+
     open("/tmp/#{filename}", 'wb') do |file|
-      S3Object.stream("#{@config['folder']}/#{filename}", @config['bucket']) do |chunk|
+      bucket.objects["#{@config['folder']}/#{filename}"].read do |chunk|
         file.write chunk
       end
     end
@@ -158,7 +162,7 @@ Location on S3: #{s3_path}
   end # mail
   
   def connect
-    AWS::S3::Base.establish_connection!(
+    @s3 = AWS::S3.new(
       :access_key_id     => @config["AWS_ACCESS_KEY_ID"],
       :secret_access_key => @config["AWS_SECRET_ACCESS_KEY"]
     )
