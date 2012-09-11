@@ -43,12 +43,12 @@ class MysqlTools
     bucket = @s3.buckets[@config['bucket']]
 
     file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%a")}.sql.gz"
-    bucket.objects['file_name'].write(open("#{dump_path}.gz"))
+    bucket.objects[file_name].write(open("#{dump_path}.gz"))
 
     # if it's the first of the month, store a long-term backup
     if Time.now.day == 1
       file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%Y-%m-long_term")}.sql.gz"
-      bucket.objects['file_name'].write(open("#{dump_path}.gz"))
+      bucket.objects[file_name].write(open("#{dump_path}.gz"))
     end
     
     puts "Deleting tmp files..."
