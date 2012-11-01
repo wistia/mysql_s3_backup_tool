@@ -27,19 +27,19 @@ class MysqlTools
     dump_path   = "/tmp/db_backup_#{Time.now.tv_sec}_#{rand}.sql"
     puts "dump_path: #{dump_path}" if DEBUG
     
-    puts "Exporting..."
+    puts "#{Time.now} Exporting..."
     dump_result = "#{dump_path}.result"
     mysql_database_clause = @config['mysql_database'] ? @config['mysql_database'] : '--all-databases'
     mysql_user_clause = @config['mysql_user'] ? "-u#{@config['mysql_user']}" : "-uroot"
     mysql_password_clause = @config['mysql_password'] ? "-p#{@config['mysql_password']}" : ""
-    `mysqldump -v --quick --single-transaction #{mysql_user_clause} #{mysql_password_clause} #{mysql_database_clause} > #{dump_path} 2> #{dump_result}`
+    `mysqldump -v --quick --single-transaction #{mysql_user_clause} #{mysql_password_clause} #{mysql_database_clause} | gzip > #{dump_path}.gz 2> #{dump_result}`
     puts "dump_result: #{File.read(dump_result)}" if DEBUG
     
-    puts "Compressing..."
-    compress_result = `gzip #{dump_path} 2>&1`
-    puts "Compress result: #{compress_result}" if DEBUG
+    #puts "#{Time.now} Compressing..."
+    #compress_result = `gzip #{dump_path} 2>&1`
+    #puts "Compress result: #{compress_result}" if DEBUG
     
-    puts "Storing..."
+    puts "#{Time.now} Storing..."
     bucket = @s3.buckets[@config['bucket']]
 
     file_name = "#{@config['folder']}/#{@config['filename']}_#{Time.now.strftime("%a")}.sql.gz"
@@ -51,7 +51,7 @@ class MysqlTools
       bucket.objects[file_name].write(open("#{dump_path}.gz"))
     end
     
-    puts "Deleting tmp files..."
+    puts "#{Time.now} Deleting tmp files..."
     File.unlink(dump_result, "#{dump_path}.gz")
 
     success = bucket.objects[file_name].exists? ? "success":"failure"
