@@ -32,7 +32,8 @@ class MysqlTools
     mysql_database_clause = @config['mysql_database'] ? @config['mysql_database'] : '--all-databases'
     mysql_user_clause = @config['mysql_user'] ? "-u#{@config['mysql_user']}" : "-uroot"
     mysql_password_clause = @config['mysql_password'] ? "-p#{@config['mysql_password']}" : ""
-    `mysqldump -v --quick --single-transaction #{mysql_user_clause} #{mysql_password_clause} #{mysql_database_clause} | gzip > #{dump_path}.gz 2> #{dump_result}`
+    mysql_host_clause = @config['mysql_host'] ? "-h #{@config['mysql_host']}" : ""
+    `mysqldump -v --quick --single-transaction #{mysql_host_clause} #{mysql_user_clause} #{mysql_password_clause} #{mysql_database_clause} | gzip > #{dump_path}.gz 2> #{dump_result}`
     puts "dump_result: #{File.read(dump_result)}" if DEBUG
     
     #puts "#{Time.now} Compressing..."
